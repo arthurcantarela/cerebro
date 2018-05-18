@@ -7,9 +7,24 @@ import OpenGL.GL as gl
 import OpenGL.GLU as glu
 import OpenGL.GLUT as glut
 
+# def surfaceOnly(image):
+  
+
+image = []
+for x in range(-5,5):
+  for y in range(-5,5):
+    for z in range(-5,5):
+      image.append((x,y,z))
+
+# image = []
+
 def Voxel(origin, color, size):
   x, y, z = origin
   r, g, b = color
+  # x /= 10
+  # y /= 10
+  # z /= 10
+  # size /= 10
 
   gl.glPushMatrix()
 
@@ -44,14 +59,18 @@ def Voxel(origin, color, size):
 
 def init() :
     gl.glClearColor(0.0, 0.0, 0.0, 0.0)
+    gl.glClearDepth(1.0)
+    
     gl.glShadeModel(gl.GL_FLAT)
+    # gl.glShadeModel(gl.GL_SMOOTH)
+    
     gl.glEnable(gl.GL_DEPTH_TEST)
     
 
 
 def display() :
     global camera
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+    gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
     gl.glPushMatrix()
     gl.glTranslatef(0.0, 0.0, -10.0)
 
@@ -59,11 +78,10 @@ def display() :
     gl.glRotatef(camera["y"], 0.0, 1.0, 0.0)
     gl.glRotatef(camera["z"], 0.0, 0.0, 1.0)
 
-    for x in range(-5,5):
-      for y in range(-5,5):
-        for z in range(-5,5):
-          point = (x, y, z)
-          Voxel(point, ((x+5)*1./10.,(y+5)*1./10.,(z+5)*1./10.), 1)
+    global image
+    for point in image:
+      x, y, z = point
+      Voxel(point, ((x+5)*1./10.,(y+5)*1./10.,(z+5)*1./10.), 1)
 
     gl.glPopMatrix()
     glut.glutSwapBuffers()
@@ -82,17 +100,17 @@ def reshape(w, h) :
 def keyboard(key, x, y) :
     global camera
     if key == 'x' :
-        camera["x"] = (camera["x"] + 1) % 360
+        camera["x"] = (camera["x"] + 10) % 360
     elif key == 'X' :
-        camera["x"] = (camera["x"] - 1) % 360
+        camera["x"] = (camera["x"] - 10) % 360
     elif key == 'y' :
-        camera["y"] = (camera["y"] + 1) % 360
+        camera["y"] = (camera["y"] + 10) % 360
     elif key == 'Y' :
-        camera["y"] = (camera["y"] - 1) % 360
+        camera["y"] = (camera["y"] - 10) % 360
     elif key == 'z' :
-        camera["z"] = (camera["z"] + 1) % 360
+        camera["z"] = (camera["z"] + 10) % 360
     elif key == 'Z' :
-        camera["z"] = (camera["z"] - 1) % 360
+        camera["z"] = (camera["z"] - 10) % 360
     else :
         return
     glut.glutPostRedisplay()
@@ -100,7 +118,7 @@ def keyboard(key, x, y) :
 
 def main() :
     _ = glut.glutInit(sys.argv)
-    glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGB)
+    glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGB | glut.GLUT_DEPTH)
 
     glut.glutInitWindowSize(800, 800)
     glut.glutInitWindowPosition(100, 100)
