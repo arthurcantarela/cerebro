@@ -16,7 +16,7 @@ def Voxel(origin, color, size):
   gl.glColor3f(r, g, b)
   gl.glTranslatef(x, y, z)
   
-  gl.glBegin(gl.GL_LINES)
+  gl.glBegin(gl.GL_QUADS)
   vertices= (
     (size/2, -size/2, -size/2),
     (size/2, size/2, -size/2),
@@ -51,13 +51,19 @@ def Voxel(origin, color, size):
 def init() :
     gl.glClearColor(0.0, 0.0, 0.0, 0.0)
     gl.glShadeModel(gl.GL_FLAT)
+    gl.glEnable(gl.GL_DEPTH_TEST)
+    
 
 
 def display() :
     global camera
     gl.glClear(gl.GL_COLOR_BUFFER_BIT)
     gl.glPushMatrix()
-    gl.glRotatef(camera, 1.0, 0.0, 0.0)
+    gl.glTranslatef(0.0, 0.0, -10.0)
+
+    gl.glRotatef(camera["x"], 1.0, 0.0, 0.0)
+    gl.glRotatef(camera["y"], 0.0, 1.0, 0.0)
+    gl.glRotatef(camera["z"], 0.0, 0.0, 1.0)
 
     resolution = .5
     points = [
@@ -69,8 +75,11 @@ def display() :
       (0,-resolution,0),
       (0,0,-resolution)
     ]
-    for point in points:
-      Voxel(point, (1,0,0), resolution)
+    for x in range(-5,5):
+      for y in range(-5,5):
+        for z in range(-5,5):
+          point = (x, y, z)
+          Voxel(point, ((x+5)*1./10.,(y+5)*1./10.,(z+5)*1./10.), 1)
 
     gl.glPopMatrix()
     glut.glutSwapBuffers()
@@ -88,10 +97,18 @@ def reshape(w, h) :
 
 def keyboard(key, x, y) :
     global camera
-    if key == 'c' :
-        camera = (camera + 10) % 360
-    elif key == 'C' :
-        camera = (camera - 10) % 360
+    if key == 'x' :
+        camera["x"] = (camera["x"] + 10) % 360
+    elif key == 'X' :
+        camera["x"] = (camera["x"] - 10) % 360
+    elif key == 'y' :
+        camera["y"] = (camera["y"] + 10) % 360
+    elif key == 'Y' :
+        camera["y"] = (camera["y"] - 10) % 360
+    elif key == 'z' :
+        camera["z"] = (camera["z"] + 10) % 360
+    elif key == 'Z' :
+        camera["z"] = (camera["z"] - 10) % 360
     else :
         return
     glut.glutPostRedisplay()
@@ -101,14 +118,14 @@ def main() :
     _ = glut.glutInit(sys.argv)
     glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGB)
 
-    glut.glutInitWindowSize(500, 500)
+    glut.glutInitWindowSize(800, 800)
     glut.glutInitWindowPosition(100, 100)
     _ = glut.glutCreateWindow(sys.argv[0])
 
     init()
 
     global camera
-    camera = 0
+    camera = {"x": 0, "y": 0, "z": 0}
     _ = glut.glutDisplayFunc(display)
     _ = glut.glutReshapeFunc(reshape)
     _ = glut.glutKeyboardFunc(keyboard)
