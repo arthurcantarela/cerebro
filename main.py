@@ -12,54 +12,55 @@ import OpenGL.GLUT as glut
   
 
 image = []
-imageRange = 8
-for x in range(-imageRange,imageRange):
-  for y in range(-imageRange,imageRange):
-    for z in range(-imageRange,imageRange):
+imageRange = 15
+for x in range(0,imageRange):
+  for y in range(0,imageRange):
+    for z in range(0,imageRange):
       image.append((x,y,z))
 
-# image = []
 def surfaceOnly(image):
   global imageRange
 
   filled = []
-  for x in range(-imageRange,imageRange):
+  for x in range(0,imageRange):
     filled.append([])
-    for y in range(-imageRange,imageRange):
-      filled[x+imageRange].append([])
-      for z in range(-imageRange,imageRange):
-        filled[x+imageRange][y+imageRange].append(1 if (x,y,z) in image else 0)
+    for y in range(0,imageRange):
+      filled[x].append([])
+      for z in range(0,imageRange):
+        filled[x][y].append(1 if (x,y,z) in image else 0)
+
+  print("aqui foi")
 
   surfaceOnly = copy.deepcopy(filled)
-  for x in range(-imageRange,imageRange):
-    for y in range(-imageRange,imageRange):
-      for z in range(-imageRange,imageRange):
-        if(filled[x+imageRange][y+imageRange][z+imageRange] == 1):
-          surfaceOnly[x+imageRange][y+imageRange][z+imageRange] = []
+  for x in range(0,imageRange):
+    for y in range(0,imageRange):
+      for z in range(0,imageRange):
+        if(filled[x][y][z] == 1):
+          surfaceOnly[x][y][z] = []
           for face in range(-1,2,2):
-            if not(x + face >= -imageRange and x + face < imageRange) or not(filled[x+imageRange+face][y+imageRange][z+imageRange]):
-              surfaceOnly[x+imageRange][y+imageRange][z+imageRange].append((face,0,0))
-            if not(y + face >= -imageRange and y + face < imageRange) or not(filled[x+imageRange][y+imageRange+face][z+imageRange]):
-              surfaceOnly[x+imageRange][y+imageRange][z+imageRange].append((0,face,0))
-            if not(z + face >= -imageRange and z + face < imageRange) or not(filled[x+imageRange][y+imageRange][z+imageRange+face]):
-              surfaceOnly[x+imageRange][y+imageRange][z+imageRange].append((0,0,face))
+            if not(x + face >= 0 and x + face < imageRange) or not(filled[x+face][y][z]):
+              surfaceOnly[x][y][z].append((face,0,0))
+            if not(y + face >= 0 and y + face < imageRange) or not(filled[x][y+face][z]):
+              surfaceOnly[x][y][z].append((0,face,0))
+            if not(z + face >= 0 and z + face < imageRange) or not(filled[x][y][z+face]):
+              surfaceOnly[x][y][z].append((0,0,face))
 
   return surfaceOnly
 
 imageSurface = surfaceOnly(image)
 
 def Voxel(origin, color, size):
-  # size /= 2
+  size /= 1
   global imageSurface
   global imageRange
   x, y, z = origin
   r, g, b = color
-  divisor = 2
+  divisor = 3
 
   gl.glPushMatrix()
 
   gl.glColor3f(r, g, b)
-  gl.glTranslatef(x/divisor, y/divisor, z/divisor)
+  gl.glTranslatef((x-imageRange/2)/divisor, (y-imageRange/2)/divisor, (z-imageRange/2)/divisor)
   
   vertices= (
     (size/2/divisor, size/2/divisor, size/2/divisor),
@@ -82,19 +83,20 @@ def Voxel(origin, color, size):
   ]
   faces = []
   
-  facesAvaiable = imageSurface[x+imageRange][y+imageRange][z+imageRange]
-  if(1,0,0) in facesAvaiable: faces.append((0,1,3,2))
-  if(-1,0,0) in facesAvaiable: faces.append((4,5,7,6))
-  if(0,1,0) in facesAvaiable: faces.append((0,1,5,4))
-  if(0,-1,0) in facesAvaiable: faces.append((2,3,7,6))
-  if(0,0,1) in facesAvaiable: faces.append((0,2,6,4))
-  if(0,0,-1) in facesAvaiable: faces.append((1,3,7,5))
+  facesAvaiable = imageSurface[x][y][z]
+  if(len(facesAvaiable) > 0):
+    if(1,0,0) in facesAvaiable: faces.append((0,1,3,2))
+    if(-1,0,0) in facesAvaiable: faces.append((4,5,7,6))
+    if(0,1,0) in facesAvaiable: faces.append((0,1,5,4))
+    if(0,-1,0) in facesAvaiable: faces.append((2,3,7,6))
+    if(0,0,1) in facesAvaiable: faces.append((0,2,6,4))
+    if(0,0,-1) in facesAvaiable: faces.append((1,3,7,5))
 
-  for face in faces:
-    gl.glBegin(gl.GL_QUADS)
-    for vertex in face:
-      gl.glVertex3fv(vertices[vertex])
-    gl.glEnd()
+    for face in faces:
+      gl.glBegin(gl.GL_QUADS)
+      for vertex in face:
+        gl.glVertex3fv(vertices[vertex])
+      gl.glEnd()
 
   gl.glPopMatrix()
 
@@ -124,7 +126,7 @@ def display() :
 
     for point in image:
       x, y, z = point
-      Voxel(point, ((x+imageRange)*1./(imageRange*2),(y+imageRange)*1./(imageRange*2),(z+imageRange)*1./(imageRange*2)), 1)
+      Voxel(point, ((x)*1./imageRange,(y)*1./imageRange,(z)*1./imageRange), 1)
 
     gl.glPopMatrix()
     glut.glutSwapBuffers()
