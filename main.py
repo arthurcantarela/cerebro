@@ -16,35 +16,29 @@ def Voxel(origin, color, size):
   gl.glColor3f(r, g, b)
   gl.glTranslatef(x, y, z)
   
-  gl.glBegin(gl.GL_QUADS)
   vertices= (
-    (size/2, -size/2, -size/2),
-    (size/2, size/2, -size/2),
-    (-size/2, size/2, -size/2),
-    (-size/2, -size/2, -size/2),
-    (size/2, -size/2, size/2),
     (size/2, size/2, size/2),
+    (size/2, size/2, -size/2),
+    (size/2, -size/2, size/2),
+    (size/2, -size/2, -size/2),
+    (-size/2, size/2, size/2),
+    (-size/2, size/2, -size/2),
     (-size/2, -size/2, size/2),
-    (-size/2, size/2, size/2)
+    (-size/2, -size/2, -size/2)
   )
-  edges = (
-    (0,1),
-    (0,3),
-    (0,4),
-    (2,1),
-    (2,3),
-    (2,7),
-    (6,3),
-    (6,4),
-    (6,7),
-    (5,1),
-    (5,4),
-    (5,7)
+  faces = (
+    (0,1,3,2),
+    (4,5,7,6),
+    (0,1,5,4),
+    (2,3,7,6),
+    (0,2,6,4),
+    (1,3,7,5)
   )
-  for edge in edges:
-    for vertex in edge:
+  for face in faces:
+    gl.glBegin(gl.GL_QUADS)
+    for vertex in face:
       gl.glVertex3fv(vertices[vertex])
-  gl.glEnd()
+    gl.glEnd()
 
   gl.glPopMatrix()
 
@@ -65,16 +59,6 @@ def display() :
     gl.glRotatef(camera["y"], 0.0, 1.0, 0.0)
     gl.glRotatef(camera["z"], 0.0, 0.0, 1.0)
 
-    resolution = .5
-    points = [
-      (0,0,resolution),
-      (0,resolution,0),
-      (-resolution,0,0),
-      (0,0,0),
-      (resolution,0,0),
-      (0,-resolution,0),
-      (0,0,-resolution)
-    ]
     for x in range(-5,5):
       for y in range(-5,5):
         for z in range(-5,5):
@@ -98,17 +82,17 @@ def reshape(w, h) :
 def keyboard(key, x, y) :
     global camera
     if key == 'x' :
-        camera["x"] = (camera["x"] + 10) % 360
+        camera["x"] = (camera["x"] + 1) % 360
     elif key == 'X' :
-        camera["x"] = (camera["x"] - 10) % 360
+        camera["x"] = (camera["x"] - 1) % 360
     elif key == 'y' :
-        camera["y"] = (camera["y"] + 10) % 360
+        camera["y"] = (camera["y"] + 1) % 360
     elif key == 'Y' :
-        camera["y"] = (camera["y"] - 10) % 360
+        camera["y"] = (camera["y"] - 1) % 360
     elif key == 'z' :
-        camera["z"] = (camera["z"] + 10) % 360
+        camera["z"] = (camera["z"] + 1) % 360
     elif key == 'Z' :
-        camera["z"] = (camera["z"] - 10) % 360
+        camera["z"] = (camera["z"] - 1) % 360
     else :
         return
     glut.glutPostRedisplay()
