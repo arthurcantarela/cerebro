@@ -8,11 +8,13 @@ import OpenGL.GL as gl
 import OpenGL.GLU as glu
 import OpenGL.GLUT as glut
 
+import numpy as np
 
+import time
   
 
 image = []
-imageRange = 15
+imageRange = 256
 for x in range(0,imageRange):
   for y in range(0,imageRange):
     for z in range(0,imageRange):
@@ -20,7 +22,9 @@ for x in range(0,imageRange):
 
 def surfaceOnly(image):
   global imageRange
+  time1 = time.time()
 
+  '''  
   filled = []
   for x in range(0,imageRange):
     filled.append([])
@@ -28,29 +32,53 @@ def surfaceOnly(image):
       filled[x].append([])
       for z in range(0,imageRange):
         filled[x][y].append(1 if (x,y,z) in image else 0)
+  '''
 
-  print("aqui foi")
+  time2 = time.time()  
 
-  surfaceOnly = copy.deepcopy(filled)
+  filled = np.zeros((imageRange, imageRange, imageRange))
+  x1 = np.zeros((imageRange, imageRange, imageRange))
+  x2 = np.zeros((imageRange, imageRange, imageRange))
+  y1 = np.zeros((imageRange, imageRange, imageRange))
+  y2 = np.zeros((imageRange, imageRange, imageRange))
+  z1 = np.zeros((imageRange, imageRange, imageRange))
+  z2 = np.zeros((imageRange, imageRange, imageRange))
+
+  for dot in image:
+    x, y, z = dot
+    filled[x][y][z] = 1
+    
+  time2b = time.time()
+
   for x in range(0,imageRange):
     for y in range(0,imageRange):
       for z in range(0,imageRange):
-        if(filled[x][y][z] == 1):
-          surfaceOnly[x][y][z] = []
-          for face in range(-1,2,2):
-            if not(x + face >= 0 and x + face < imageRange) or not(filled[x+face][y][z]):
-              surfaceOnly[x][y][z].append((face,0,0))
-            if not(y + face >= 0 and y + face < imageRange) or not(filled[x][y+face][z]):
-              surfaceOnly[x][y][z].append((0,face,0))
-            if not(z + face >= 0 and z + face < imageRange) or not(filled[x][y][z+face]):
-              surfaceOnly[x][y][z].append((0,0,face))
+        if(filled[x][y][z]):
+          if not(x - 1 >= 0) or not(filled[x-1][y][z]):
+            x1[x][y][z] = 1
+          if not(x + 1 < imageRange) or not(filled[x+1][y][z]):
+            x2[x][y][z] = 1
+          if not(y - 1 >= 0) or not(filled[x][y-1][z]):
+            y1[x][y][z] = 1
+          if not(y + 1 < imageRange) or not(filled[x][y+1][z]):
+            y2[x][y][z] = 1
+          if not(z - 1 >= 0) or not(filled[x][y][z-1]):
+            z1[x][y][z] = 1
+          if not(z + 1 < imageRange) or not(filled[x][y][z-1]):
+            z2[x][y][z] = 1
 
-  return surfaceOnly
+  time3 = time.time()
+
+  print((time2 - time1)*1000)    
+  print((time2b - time2)*1000)    
+  print((time3 - time2b)*1000)    
+
+  return (x1, x2, y1, y2, z1, z2)
 
 imageSurface = surfaceOnly(image)
 
 def Voxel(origin, color, size):
-  size /= 1
+  size /= 2
   global imageSurface
   global imageRange
   x, y, z = origin
@@ -82,21 +110,19 @@ def Voxel(origin, color, size):
     (1,3,7,5)
   ]
   faces = []
-  
-  facesAvaiable = imageSurface[x][y][z]
-  if(len(facesAvaiable) > 0):
-    if(1,0,0) in facesAvaiable: faces.append((0,1,3,2))
-    if(-1,0,0) in facesAvaiable: faces.append((4,5,7,6))
-    if(0,1,0) in facesAvaiable: faces.append((0,1,5,4))
-    if(0,-1,0) in facesAvaiable: faces.append((2,3,7,6))
-    if(0,0,1) in facesAvaiable: faces.append((0,2,6,4))
-    if(0,0,-1) in facesAvaiable: faces.append((1,3,7,5))
+  x1, x2, y1, y2, z1, z2 = imageSurface
+  if x1[x][y][z]: faces.append((4,5,7,6))
+  if x2[x][y][z]: faces.append((0,1,3,2))
+  if y1[x][y][z]: faces.append((2,3,7,6))
+  if y2[x][y][z]: faces.append((0,1,5,4))
+  if z1[x][y][z]: faces.append((1,3,7,5))
+  if z2[x][y][z]: faces.append((0,2,6,4))
 
-    for face in faces:
-      gl.glBegin(gl.GL_QUADS)
-      for vertex in face:
-        gl.glVertex3fv(vertices[vertex])
-      gl.glEnd()
+  for face in faces:
+    gl.glBegin(gl.GL_QUADS)
+    for vertex in face:
+      gl.glVertex3fv(vertices[vertex])
+    gl.glEnd()
 
   gl.glPopMatrix()
 
