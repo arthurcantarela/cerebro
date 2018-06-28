@@ -1,6 +1,7 @@
 from __future__ import division
 from __future__ import print_function
 
+import os
 import sys
 import copy
 
@@ -9,80 +10,93 @@ import OpenGL.GLU as glu
 import OpenGL.GLUT as glut
 
 import numpy as np
+import nibabel as nib
 
 import time
   
-
+mriFilename = os.path.join(
+  "/home/cantarela/cerebro/samples/Original", 
+  "CC0359_ge_3_58_F.nii.gz"
+)
+imageRange = 26
+'''
 image = []
-imageRange = 256
+imageRange = 30
 for x in range(0,imageRange):
   for y in range(0,imageRange):
     for z in range(0,imageRange):
       image.append((x,y,z))
+'''
+mriFile = nib.load(mriFilename)
+image = mriFile.get_fdata()
+newImage = []
+x, y, z = image.shape
+factor = 10
+for i in range(0,x,factor):
+  newImage.append([])
+  for j in range(0,y,factor):
+    newImage[int(i/factor)].append([])
+    for k in range(0,z,factor):
+      newImage[int(i/factor)][int(j/factor)].append(image[i][j][k])
 
+x, y, z = np.asarray(newImage).shape
+maxVal = np.asarray(newImage).max()
+filled = np.zeros((x, y, z))
+for i in range(0,x):
+  for j in range(0,y):
+    for k in range(0,z):
+      color = newImage[i][j][k]
+      if(color > maxVal/10):
+        filled[i][j][k] = min(1, color/maxVal)
+
+print(filled)
+#sys.exit()
 def surfaceOnly(image):
-  global imageRange
   time1 = time.time()
 
-  '''  
-  filled = []
-  for x in range(0,imageRange):
-    filled.append([])
-    for y in range(0,imageRange):
-      filled[x].append([])
-      for z in range(0,imageRange):
-        filled[x][y].append(1 if (x,y,z) in image else 0)
-  '''
-
-  time2 = time.time()  
-
-  filled = np.zeros((imageRange, imageRange, imageRange))
-  x1 = np.zeros((imageRange, imageRange, imageRange))
-  x2 = np.zeros((imageRange, imageRange, imageRange))
-  y1 = np.zeros((imageRange, imageRange, imageRange))
-  y2 = np.zeros((imageRange, imageRange, imageRange))
-  z1 = np.zeros((imageRange, imageRange, imageRange))
-  z2 = np.zeros((imageRange, imageRange, imageRange))
-
-  for dot in image:
-    x, y, z = dot
-    filled[x][y][z] = 1
+  global filled
+  x1 = np.zeros((20, 26, 26))
+  x2 = np.zeros((20, 26, 26))
+  y1 = np.zeros((20, 26, 26))
+  y2 = np.zeros((20, 26, 26))
+  z1 = np.zeros((20, 26, 26))
+  z2 = np.zeros((20, 26, 26))
     
-  time2b = time.time()
+  time2 = time.time()
 
-  for x in range(0,imageRange):
-    for y in range(0,imageRange):
-      for z in range(0,imageRange):
+  for x in range(0,20):
+    for y in range(0,26):
+      for z in range(0,26):
         if(filled[x][y][z]):
           if not(x - 1 >= 0) or not(filled[x-1][y][z]):
             x1[x][y][z] = 1
-          if not(x + 1 < imageRange) or not(filled[x+1][y][z]):
+          if not(x + 1 < 20) or not(filled[x+1][y][z]):
             x2[x][y][z] = 1
           if not(y - 1 >= 0) or not(filled[x][y-1][z]):
             y1[x][y][z] = 1
-          if not(y + 1 < imageRange) or not(filled[x][y+1][z]):
+          if not(y + 1 < 26) or not(filled[x][y+1][z]):
             y2[x][y][z] = 1
           if not(z - 1 >= 0) or not(filled[x][y][z-1]):
             z1[x][y][z] = 1
-          if not(z + 1 < imageRange) or not(filled[x][y][z-1]):
+          if not(z + 1 < 26) or not(filled[x][y][z-1]):
             z2[x][y][z] = 1
 
   time3 = time.time()
 
-  print((time2 - time1)*1000)    
-  print((time2b - time2)*1000)    
-  print((time3 - time2b)*1000)    
+  print((time2 - time1)*1000)      
+  print((time3 - time2)*1000)    
 
   return (x1, x2, y1, y2, z1, z2)
 
 imageSurface = surfaceOnly(image)
 
 def Voxel(origin, color, size):
-  size /= 2
+  size /= 1
   global imageSurface
   global imageRange
   x, y, z = origin
-  r, g, b = color
+  global filled
+  r = g = b = filled[x][y][z]
   divisor = 3
 
   gl.glPushMatrix()
@@ -138,6 +152,7 @@ def init() :
 
 
 def display() :
+    time1 = time.time()
     global camera
     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
     gl.glPushMatrix()
@@ -149,13 +164,16 @@ def display() :
 
     global image
     global imageRange
+    global filled
 
     for point in image:
       x, y, z = point
-      Voxel(point, ((x)*1./imageRange,(y)*1./imageRange,(z)*1./imageRange), 1)
+      if filled[x][y][z]:
+        Voxel(point, ((x)*1./imageRange,(y)*1./imageRange,(z)*1./imageRange), 1)
 
     gl.glPopMatrix()
     glut.glutSwapBuffers()
+    print((time.time() - time1)*1000)
 
 
 def reshape(w, h) :
