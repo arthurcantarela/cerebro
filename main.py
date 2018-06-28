@@ -15,23 +15,22 @@ import nibabel as nib
 import time
   
 mriFilename = os.path.join(
-  "/home/cantarela/cerebro/samples/Original", 
+  "/home/cantarela/cerebro/Original", 
   "CC0359_ge_3_58_F.nii.gz"
 )
-imageRange = 26
-'''
-image = []
-imageRange = 30
-for x in range(0,imageRange):
-  for y in range(0,imageRange):
-    for z in range(0,imageRange):
-      image.append((x,y,z))
-'''
-mriFile = nib.load(mriFilename)
+mriFilename2 = os.path.join(
+  "/home/cantarela/cerebro/Original", 
+  "CC0019_philips_15_57_F.nii.gz"
+)
+mriFilename3 = os.path.join(
+  "/home/cantarela/cerebro/Original", 
+  "CC0172_siemens_15_52_M.nii.gz"
+)
+mriFile = nib.load(mriFilename3)
 image = mriFile.get_fdata()
 newImage = []
 x, y, z = image.shape
-factor = 10
+factor = 2
 for i in range(0,x,factor):
   newImage.append([])
   for j in range(0,y,factor):
@@ -46,39 +45,45 @@ for i in range(0,x):
   for j in range(0,y):
     for k in range(0,z):
       color = newImage[i][j][k]
-      if(color > maxVal/10):
-        filled[i][j][k] = min(1, color/maxVal)
+      if(color > maxVal/5):
+        filled[i][j][k] = min(1, 1.1*color/maxVal)
 
-print(filled)
+xRange, yRange, zRange = filled.shape
+maxRange = max(xRange, yRange, zRange)
+imageRange = (xRange, yRange, zRange)
+
+#print(filled)
 #sys.exit()
 def surfaceOnly(image):
   time1 = time.time()
 
   global filled
-  x1 = np.zeros((20, 26, 26))
-  x2 = np.zeros((20, 26, 26))
-  y1 = np.zeros((20, 26, 26))
-  y2 = np.zeros((20, 26, 26))
-  z1 = np.zeros((20, 26, 26))
-  z2 = np.zeros((20, 26, 26))
+  global imageRange
+  x1 = np.zeros(imageRange)
+  x2 = np.zeros(imageRange)
+  y1 = np.zeros(imageRange)
+  y2 = np.zeros(imageRange)
+  z1 = np.zeros(imageRange)
+  z2 = np.zeros(imageRange)
     
   time2 = time.time()
 
-  for x in range(0,20):
-    for y in range(0,26):
-      for z in range(0,26):
+  xRange, yRange, zRange = imageRange
+  for x in range(0,xRange):
+    for y in range(0,yRange):
+      for z in range(0,zRange):
         if(filled[x][y][z]):
           if not(x - 1 >= 0) or not(filled[x-1][y][z]):
             x1[x][y][z] = 1
-          if not(x + 1 < 20) or not(filled[x+1][y][z]):
+          if not(x + 1 < xRange) or not(filled[x+1][y][z]):
             x2[x][y][z] = 1
           if not(y - 1 >= 0) or not(filled[x][y-1][z]):
             y1[x][y][z] = 1
-          if not(y + 1 < 26) or not(filled[x][y+1][z]):
+          if not(y + 1 < yRange) or not(filled[x][y+1][z]):
             y2[x][y][z] = 1
           if not(z - 1 >= 0) or not(filled[x][y][z-1]):
             z1[x][y][z] = 1
-          if not(z + 1 < 26) or not(filled[x][y][z-1]):
+          if not(z + 1 < zRange) or not(filled[x][y][z-1]):
             z2[x][y][z] = 1
 
   time3 = time.time()
@@ -90,19 +95,18 @@ def surfaceOnly(image):
 
 imageSurface = surfaceOnly(image)
 
-def Voxel(origin, color, size):
-  size /= 1
+def Voxel(origin, size=1):
   global imageSurface
-  global imageRange
+  global maxRange
   x, y, z = origin
   global filled
   r = g = b = filled[x][y][z]
-  divisor = 3
+  divisor = 16
 
   gl.glPushMatrix()
 
   gl.glColor3f(r, g, b)
-  gl.glTranslatef((x-imageRange/2)/divisor, (y-imageRange/2)/divisor, (z-imageRange/2)/divisor)
+  gl.glTranslatef((x-maxRange/2)/divisor, (y-maxRange/2)/divisor, (z-maxRange/2)/divisor)
   
   vertices= (
     (size/2/divisor, size/2/divisor, size/2/divisor),
@@ -162,15 +166,21 @@ def display() :
     gl.glRotatef(camera["y"], 0.0, 1.0, 0.0)
     gl.glRotatef(camera["z"], 0.0, 0.0, 1.0)
 
+    global filled
+    x, y, z = filled.shape
+    for i in range(0, x):
+      for j in range(0, y):
+        for k in range(0, z):
+          if(filled[i][j][k]):
+            Voxel((i,j,k))
+    '''
     global image
     global imageRange
-    global filled
-
     for point in image:
       x, y, z = point
       if filled[x][y][z]:
         Voxel(point, ((x)*1./imageRange,(y)*1./imageRange,(z)*1./imageRange), 1)
-
+    '''
     gl.glPopMatrix()
     glut.glutSwapBuffers()
     print((time.time() - time1)*1000)
@@ -216,7 +226,7 @@ def main() :
     init()
 
     global camera
-    camera = {"x": 0, "y": 0, "z": 0}
+    camera = {"x": -90, "y": 0, "z": 135}
     _ = glut.glutDisplayFunc(display)
     _ = glut.glutReshapeFunc(reshape)
     _ = glut.glutKeyboardFunc(keyboard)
