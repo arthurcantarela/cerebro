@@ -13,10 +13,13 @@ import numpy as np
 import nibabel as nib
 
 import time
-  
 mriFilename = os.path.join(
   "/home/cantarela/cerebro/Original", 
-  "CC0359_ge_3_58_F.nii.gz"
+  "CC0300_ge_3_58_M.nii.gz"
+)
+manualFilename = os.path.join (
+  "/home/cantarela/cerebro/Manual", 
+  "CC0300_ge_3_58_M_manual.nii.gz"
 )
 mriFilename2 = os.path.join(
   "/home/cantarela/cerebro/Original", 
@@ -26,17 +29,25 @@ mriFilename3 = os.path.join(
   "/home/cantarela/cerebro/Original", 
   "CC0172_siemens_15_52_M.nii.gz"
 )
-mriFile = nib.load(mriFilename3)
+mriFile = nib.load(mriFilename)
+manualFile = nib.load(manualFilename)
 image = mriFile.get_fdata()
+imageManual = manualFile.get_fdata()
+print(np.asarray(image).max())
 newImage = []
+newImageManual = []
 x, y, z = image.shape
-factor = 2
+factor = 1
+clipping = True
 for i in range(0,x,factor):
   newImage.append([])
+  newImageManual.append([])
   for j in range(0,y,factor):
     newImage[int(i/factor)].append([])
+    newImageManual[int(i/factor)].append([])
     for k in range(0,z,factor):
       newImage[int(i/factor)][int(j/factor)].append(image[i][j][k])
+      newImageManual[int(i/factor)][int(j/factor)].append(imageManual[i][j][k])
 
 x, y, z = np.asarray(newImage).shape
 maxVal = np.asarray(newImage).max()
@@ -45,8 +56,8 @@ for i in range(0,x):
   for j in range(0,y):
     for k in range(0,z):
       color = newImage[i][j][k]
-      if(color > maxVal/5):
-        filled[i][j][k] = min(1, 1.1*color/maxVal)
+      if(color > maxVal/5 and (newImageManual[i][j][k] or not clipping)):
+        filled[i][j][k] = min(1, color/maxVal)
 
 xRange, yRange, zRange = filled.shape
 maxRange = max(xRange, yRange, zRange)
@@ -101,7 +112,7 @@ def Voxel(origin, size=1):
   x, y, z = origin
   global filled
   r = g = b = filled[x][y][z]
-  divisor = 16
+  divisor = maxRange/12
 
   gl.glPushMatrix()
 
@@ -167,20 +178,14 @@ def display() :
     gl.glRotatef(camera["z"], 0.0, 0.0, 1.0)
 
     global filled
+    global imageManual
     x, y, z = filled.shape
     for i in range(0, x):
       for j in range(0, y):
         for k in range(0, z):
           if(filled[i][j][k]):
             Voxel((i,j,k))
-    '''
-    global image
-    global imageRange
-    for point in image:
-      x, y, z = point
-      if filled[x][y][z]:
-        Voxel(point, ((x)*1./imageRange,(y)*1./imageRange,(z)*1./imageRange), 1)
-    '''
+
     gl.glPopMatrix()
     glut.glutSwapBuffers()
     print((time.time() - time1)*1000)
