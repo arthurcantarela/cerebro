@@ -1,8 +1,5 @@
 # cerebro
-## Authors
-* Developer
-** Arthur Cantarela <cantarela.arthur@gmail.com>
-* Collaborators
-** Júlia Carnelli
-** Fábio Malheiros
-** Guilherme Fontebasso
+## Instructions
+Change path of mriFilename (mri itself) and manualFilename (brain segmentation) in main.py
+This project used this data source:
+http://miclab.fee.unicamp.br/calgary-campinas-359-updated-05092017
